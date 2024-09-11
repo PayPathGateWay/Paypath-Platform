@@ -1,13 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
+import Authantcation from '@/Components/Auth/Authantcation';
 
 const AppRouter: React.FC = () => {
     return (
         <Routes>
             {/* Public routes */}
-            <Route path="/auth/login" element={<h1>Login</h1>} />
-            <Route path="/auth/register" element={<h1>Register</h1>} />
+            <Route path="/auth/login" element={<Authantcation/>} />
+            <Route path="/auth/register" element={<Authantcation/>}/>
 
             {/* Redirect unauthenticated users from home to login */}
             <Route
