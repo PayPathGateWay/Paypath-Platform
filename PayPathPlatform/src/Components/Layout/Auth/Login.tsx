@@ -1,33 +1,28 @@
-import { useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import SparkleButton from "@/Components/Common/SparkleButton";
-import { useEffect, useState } from "react";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import SparkleButton from '@/Components/Common/SparkleButton';
 
 const formSchema = z.object({
   password: z
     .string()
-    .min(8, { message: "Password must be at least 8 characters." })
-    .regex(/[A-Z]/, { message: "Password must include at least one uppercase letter." })
-    .regex(/[a-z]/, { message: "Password must include at least one lowercase letter." })
-    .regex(/[0-9]/, { message: "Password must include at least one number." })
-    .regex(/[^a-zA-Z0-9]/, { message: "Password must include at least one special character." }),
+    .min(8, { message: 'Password must be at least 8 characters.' })
+    .regex(/[A-Z]/, { message: 'Password must include at least one uppercase letter.' })
+    .regex(/[a-z]/, { message: 'Password must include at least one lowercase letter.' })
+    .regex(/[0-9]/, { message: 'Password must include at least one number.' })
+    .regex(/[^a-zA-Z0-9]/, { message: 'Password must include at least one special character.' }),
   email: z
     .string()
-    .email({ message: "Invalid email address." })
-    .min(5, { message: "Email must be at least 5 characters." }),
+    .email({ message: 'Invalid email address.' })
+    .min(5, { message: 'Email must be at least 5 characters.' }),
 });
 
-const Login = () => {
+const Login: React.FC = () => {
   const [isClicked, setIsClicked] = useState(false);
-
-  // useEffect(() => {
-  //   setIsClicked((per:boolean) => !per);
-  // }, [isClicked]);
-
   const navigate = useNavigate();
 
   const handleRegister = () => {
@@ -37,14 +32,22 @@ const Login = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
+    // Update the button state on submit
+    if (values.email.length > 0) {
+
+      console.log(isClicked)
+      setIsClicked(true);
+    }
   };
+
+
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -55,7 +58,7 @@ const Login = () => {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
@@ -65,8 +68,7 @@ const Login = () => {
                   <FormControl>
                     <Input
                       {...field}
-                      className="bg-[#20242D] rounded-xl border-[#5B657E] shadow-md focus:shadow-lg
-                       text-white placeholder:text-[#5B657E] focus:outline-none p-[22px] w-[420px]"
+                      className="bg-[#20242D] rounded-xl border-[#5B657E] shadow-md focus:shadow-lg text-white placeholder:text-[#5B657E] focus:outline-none p-[22px] w-[420px]"
                       placeholder="example@gmail.com"
                     />
                   </FormControl>
@@ -85,8 +87,7 @@ const Login = () => {
                     <Input
                       type="password"
                       {...field}
-                      className="bg-[#20242D] rounded-xl border-[#5B657E] shadow-md focus:shadow-lg
-                       text-white placeholder:text-[#5B657E] focus:outline-none p-[22px] w-[420px]"
+                      className="bg-[#20242D] rounded-xl border-[#5B657E] shadow-md focus:shadow-lg text-white placeholder:text-[#5B657E] focus:outline-none p-[22px] w-[420px]"
                       placeholder="Password"
                     />
                   </FormControl>
@@ -94,7 +95,7 @@ const Login = () => {
                 </FormItem>
               )}
             />
-            <SparkleButton setIsClicked={setIsClicked} isClicked={isClicked} />
+            <SparkleButton onClick={onSubmit} isClicked={isClicked} />
           </form>
         </Form>
 
