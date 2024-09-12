@@ -1,4 +1,4 @@
-const SparkleButton = ({ onClick, isClicked = false }:any) => {
+const SparkleButton = ({ onClick, isClicked = false, title }: any) => {
   return (
     <div className="relative group">
       <button
@@ -35,7 +35,14 @@ const SparkleButton = ({ onClick, isClicked = false }:any) => {
             strokeLinejoin="round"
           />
         </svg>
-        <span className="relative z-10 -left-44 group-hover:text-white">Login</span>
+        <span
+          className={`relative z-10 ${title === false ? 
+            'left-[-5.6rem]' : '-left-44'
+            } group-hover:text-white`}
+        >
+          {title ? 'Login' : 'Create Merchant Account'}
+        </span>
+
 
         {isClicked && (
           <svg

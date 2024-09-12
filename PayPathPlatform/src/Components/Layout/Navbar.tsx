@@ -1,5 +1,5 @@
-import { navbarElements } from "@/types/Constants";
-import { logo } from "@/types/Index";
+import { navbarElements } from "@/Utils/Constants";
+import { logo } from "@/Utils/Index";
 import { useNavigate } from "react-router-dom";
 
 export default function Navbar({ setAuthType }: any) {

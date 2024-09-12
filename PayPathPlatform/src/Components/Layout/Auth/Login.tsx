@@ -31,6 +31,7 @@ const Login: React.FC = () => {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
     defaultValues: {
       email: '',
       password: '',
@@ -38,11 +39,11 @@ const Login: React.FC = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
-    // Update the button state on submit
-    if (values.email.length > 0) {
+    if (values.email === undefined, values.password === undefined) {
+      // Handle the case when either email or password is not provided
+    }
+    else {
 
-      console.log(isClicked)
       setIsClicked(true);
     }
   };
@@ -95,7 +96,8 @@ const Login: React.FC = () => {
                 </FormItem>
               )}
             />
-            <SparkleButton onClick={onSubmit} isClicked={isClicked} />
+            <SparkleButton onClick={onSubmit} isClicked={isClicked} title={true} />
+
           </form>
         </Form>
 
