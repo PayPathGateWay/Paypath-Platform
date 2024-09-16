@@ -3,9 +3,8 @@ import Navbar from "../Layout/Navbar";
 import Login from "../Layout/Auth/Login";
 import Register from "../Layout/Auth/Register";
 import { useLocation } from "react-router-dom";
-import LoadingIntro from "../Common/LoadingIntro";
 
-export default function Authantcation() {
+export default function Authentication() {
     // True = Login, False = Signup
     const [authType, setAuthType] = useState(true);
     const currLoc = useLocation();
@@ -20,7 +19,7 @@ export default function Authantcation() {
     return (
         <>
             <div className="bg-[#18191C] w-screen h-screen overflow-hidden">
-                <LoadingIntro/>
+                {/* <LoadingIntro/> */}
                 <Navbar setAuthType={setAuthType} />
                 {authType ? <Login /> : <Register />}
             </div>

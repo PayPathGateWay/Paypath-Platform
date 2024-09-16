@@ -1,49 +1,32 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import PrivateRoute from './PrivateRoute';
-import Authantcation from '@/Components/Auth/Authantcation';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import Dashboard from '@/Components/Dashboard/Dashboard';
+import Authentication from '@/Components/Auth/Authentication';
+import { AuthRoute, ProtectedRoute } from './ProtectedRoute';
+
+
 
 const AppRouter: React.FC = () => {
-    return (
-        <Routes>
-            {/* Public routes */}
-            <Route path="/auth/login" element={<Authantcation/>} />
-            <Route path="/auth/register" element={<Authantcation/>}/>
+  return (
+    <Routes>
+      {/* Auth routes */}
+      <Route path="/auth/login" element={<AuthRoute element={<Authentication />} />} />
+      <Route path="/auth/register" element={<AuthRoute element={<Authentication />} />} />
+      
+      {/* Protected routes */}
+      <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
 
-            {/* Redirect unauthenticated users from home to login */}
-            <Route
-                path="/"
-                element={<Navigate to="/auth/login" replace />}
-            />
-
-            {/* Private routes (require authentication) */}
-            <Route
-                path="/dashboard"
-                element={
-                    <PrivateRoute>
-                        <h1>Dashboard (Private)</h1>
-                    </PrivateRoute>
-                }
-            />
-            <Route
-                path="/profile"
-                element={
-                    <PrivateRoute>
-                        <h1>Profile (Private)</h1>
-                    </PrivateRoute>
-                }
-            />
-
-            {/* Catch-all route for 404 not found */}
-            <Route path="*" element={<div>NOT FOUND</div>} />
-        </Routes>
-    );
+      {/* Redirect unauthenticated users */}
+      <Route path="/" element={<Navigate to="/auth/login" replace />} />
+      <Route path="*" element={<div>NOT FOUND</div>} />
+    </Routes>
+  );
 };
 
 const MainApp: React.FC = () => (
-    <Router>
-        <AppRouter />
-    </Router>
+  <Router>
+    <AppRouter />
+  </Router>
 );
 
 export default MainApp;

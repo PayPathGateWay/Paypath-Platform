@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { NavigateFunction, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import SparkleButton from '@/Components/Common/SparkleButton';
+import useAuth from '@/hooks/useAuth';
 
 const formSchema = z.object({
   password: z
@@ -21,9 +22,11 @@ const formSchema = z.object({
     .min(5, { message: 'Email must be at least 5 characters.' }),
 });
 
-const Login: React.FC = () => {
+const Login: React.FC | NavigateFunction = () => {
+
   const [isClicked, setIsClicked] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleRegister = () => {
     navigate('/auth/register'); // Navigate to the register page
@@ -40,10 +43,16 @@ const Login: React.FC = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (values.email === undefined, values.password === undefined) {
-      // Handle the case when either email or password is not provided
+
     }
     else {
-
+      try {
+        await login(values)
+        navigate('/dashboard');
+        
+      } catch (err) {
+        console.error('Login failed:', err);
+      }
       setIsClicked(true);
     }
   };
@@ -57,6 +66,9 @@ const Login: React.FC = () => {
           <h2 className="text-white text-3xl font-semibold mb-4">Log in to your account</h2>
           <p className="text-gray-400 mb-6">Welcome back! Please enter your details.</p>
         </div>
+
+        {/* {error && (<h1>{error}</h1>)}
+        {isLoading && (<h1>Loaaaaaading</h1>)} */}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

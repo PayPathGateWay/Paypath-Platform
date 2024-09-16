@@ -11,6 +11,7 @@ import { PhoneInput } from '../Utils/PhoneInput';
 import UploadFile from '../Utils/UploadFile';
 import { motion } from 'framer-motion';
 import { formSchema, validationSchema } from '@/Utils/FromUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 const Register: React.FC = () => {
 
