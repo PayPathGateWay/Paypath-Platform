@@ -1,4 +1,3 @@
-import * as yup from 'yup';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,16 +9,20 @@ import { z } from 'zod';
 import { PhoneInput } from '../Utils/PhoneInput';
 import UploadFile from '../Utils/UploadFile';
 import { motion } from 'framer-motion';
-import { formSchema, validationSchema } from '@/Utils/FromUtils';
-import { useAuth } from '@/hooks/useAuth';
+import { formSchema } from '@/Utils/FromUtils';
+import { toast } from 'react-toastify';
+import useAuth from '@/hooks/useAuth';
+import SparkleButton from '@/Components/Common/SparkleButton';
+
 
 const Register: React.FC = () => {
 
-  // ! when press next the data should be wipe of the UI but saved 
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [isValid, setIsValid] = useState<boolean | undefined>(false);
-  const [file, setFile] = useState<File | null>(null);  
+  const [file, setFile] = useState<File | null>(null);
+  const { register } = useAuth();
+  const [isClicked, setIsClicked] = useState(false);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -27,48 +30,31 @@ const Register: React.FC = () => {
     defaultValues: {
       email: '',
       password: '',
-      MerchantName: '',
-      PhoneNumber: '',
+      merchantName: '',
+      phoneNumber: '',
       platformName: '',
-      PlatformLogo: null,
+      platformLogo: undefined,
     },
   });
 
-  const { handleSubmit, control, watch, setValue } = form;
-  const formValues = watch();
+  const { handleSubmit, control, setValue } = form;
 
-  const validateForm = async () => {
-    try {
-      await validationSchema.validate(formValues, { abortEarly: false });
-      return true;
-    } catch (error) {
-      if (error instanceof yup.ValidationError) {
-        console.log(error.errors);
-        return false;
-      }
-    }
-  };
-
-  const onFileChange = (selectedFile: File ) => {
+  const onFileChange = (selectedFile: File) => {
     setFile(selectedFile);
-    setValue('PlatformLogo', selectedFile); // Update form value with the file
+    setValue('platformLogo', selectedFile);
   };
 
-  useEffect(() => {
-    const checkFormValidity = async () => {
-      const isFormValid = await validateForm();
-      setIsValid(isFormValid);
-    };
-    checkFormValidity();
-  }, [formValues]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (step === 0) {
       setStep(1);
     } else {
-      console.log('Form submitted:', values);
-      console.log('File submitted:', values.PlatformLogo.name, values.PlatformLogo.type);
-
+      try {
+        await register(values, file);
+        toast.success('Registration successful! You can now login.');
+        setIsClicked(true);
+        navigate('/dashboard');
+      } catch (err) { console.error('Registration failed:', err); toast.error('Failed to register'); navigate('/auth/register'); }
     }
   };
 
@@ -96,7 +82,7 @@ const Register: React.FC = () => {
               <>
                 <FormField
                   control={control}
-                  name="MerchantName"
+                  name="merchantName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-white">Merchant Name</FormLabel>
@@ -114,7 +100,7 @@ const Register: React.FC = () => {
 
                 <FormField
                   control={control}
-                  name="PhoneNumber"
+                  name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-white">Phone Number</FormLabel>
@@ -167,9 +153,8 @@ const Register: React.FC = () => {
                 <div className="text-center">
                   <Button
                     type="button"
-                    className={`w-[450px] ${isValid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400'} text-white`}
+                    className={`w-[450px] 'bg-blue-600 hover:bg-blue-700 text-white`}
                     onClick={() => setStep(1)}
-                    disabled={!isValid}
                   >
                     Next
                   </Button>
@@ -197,7 +182,7 @@ const Register: React.FC = () => {
 
                 <FormField
                   control={control}
-                  name="PlatformLogo"
+                  name="platformLogo"
                   render={() => (
                     <FormItem>
                       <FormLabel className="text-white">Platform Logo</FormLabel>
@@ -210,9 +195,7 @@ const Register: React.FC = () => {
                 />
 
                 <div className="text-center">
-                  <Button type="submit" className="w-[450px] bg-blue-600 hover:bg-blue-700 text-white">
-                    Register
-                  </Button>
+                  <SparkleButton onClick={onSubmit} isClicked={isClicked} title={false} width={450} />
                 </div>
               </>
             )}

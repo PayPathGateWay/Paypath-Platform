@@ -6,6 +6,15 @@ export type Merchant = {
   accessToken: string | null;
 };
 
+export type RegisterType = {
+  merchantName: string,
+  phoneNumber: string,
+  platformName: string,
+  platformLogoFile: File,
+  email: string,
+  password: string
+}
+
 export type AuthState = {
   user: Merchant | null;
   loading: boolean;
@@ -18,6 +27,15 @@ export interface AuthContextType {
   error?: string | null;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   logout: () => void;
+  register: (values: {
+    merchantName: string;
+    phoneNumber: string;
+    platformName: string;
+    email: string;
+    password: string;
+  },
+    platformLogoFile: File) => void;
+
   isAuthenticated?: boolean | null;
 }
 

@@ -1,178 +1,196 @@
-import React, { useState, useEffect } from "react";
-import { isAuthenticatedAPI, loginAPI, logOutAPI, refreshTokenAPI } from "@/Services/AuthServices";
-import { AuthContextType, AuthState, DecodedToken, Merchant } from "@/types/Auth/IAuth";
-import { jwtDecode } from "jwt-decode"; // Updated import for jwt-decode
+import React, { useState, useEffect, useCallback, useMemo, useReducer } from "react";
+import {
+    loginAPI,
+    logOutAPI,
+    registerAPI,
+    refreshTokenAPI,
+} from "@/Services/AuthServices";
+import { AuthContextType, Merchant } from "@/types/Auth/IAuth";
 import { toast } from "react-toastify";
 import axios from "axios";
+import {jwtDecode} from "jwt-decode";
+import { throttle } from 'lodash';
 
 export const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
+// Define the reducer function for managing auth state
+const authReducer = (state: any, action: any) => {
+    switch (action.type) {
+        case 'LOGIN_SUCCESS':
+            return { ...state, user: action.payload, loading: false, error: null };
+        case 'LOGOUT':
+            return { ...state, user: null, loading: false, error: null };
+        case 'SET_LOADING':
+            return { ...state, loading: true, error: null };
+        case 'SET_ERROR':
+            return { ...state, loading: false, error: action.payload };
+        default:
+            return state;
+    }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [authState, setAuthState] = useState<AuthState>({
+    const [authState, dispatch] = useReducer(authReducer, {
         user: null,
         loading: true,
         error: null,
     });
+    const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem("accessToken"));
 
-    const [accessToken, setAccessToken] = useState<string | null>(sessionStorage.getItem("accessToken"));
-
-    // Login The User
-    const login = async (credentials: { email: string; password: string }) => {
-        setAuthState(prevState => ({ ...prevState, loading: true, error: null }));
+    const isTokenExpired = useCallback((token: string): boolean => {
         try {
-            const response = await loginAPI(credentials.email, credentials.password);
-            const merchant: Merchant = {
-                merchantId: response.data.merchantId,
-                merchantName: response.data.merchantName,
-                emailAddress: response.data.emailAddress,
-                accessToken: response.data.accessToken,
-            };
-
-            if (response.data.accessToken) {
-                sessionStorage.setItem("user", JSON.stringify(merchant));
-                sessionStorage.setItem("accessToken", response.data.accessToken);
-                setAccessToken(response.data.accessToken);
-
-                setAuthState({
-                    user: merchant,
-                    loading: false,
-                    error: null,
-                });
-            }
+            const decodedToken: { exp: number } = jwtDecode(token);
+            const currentTime = Math.floor(Date.now() / 1000);
+            return decodedToken.exp < currentTime;
         } catch (error) {
-            setAuthState({
-                user: null,
-                loading: false,
-                error: "Login failed. Please check your credentials.",
-            });
-        }
-    };
-
-    // Delet the refresh token + logout the user 
-    const logout = async () => {
-        setAccessToken(null);
-        sessionStorage.removeItem("user");
-        sessionStorage.removeItem("accessToken");
-        await logOutAPI();
-        toast.success("Logged out successfully");
-        setAuthState({
-            user: null,
-            loading: false,
-            error: null,
-        });
-    };
-
-    // retrieve data from session storage
-    useEffect(() => {
-        const storedUser = sessionStorage.getItem("user");
-        const storedAccessToken = sessionStorage.getItem("accessToken");
-
-        if (storedUser && storedAccessToken) {
-            setAuthState({
-                user: JSON.parse(storedUser),
-                loading: false,
-                error: null,
-            });
-            setAccessToken(storedAccessToken);
-        } else {
-            setAuthState({
-                user: null,
-                loading: false,
-                error: null,
-            });
+            console.error("Token decode error:", error);
+            return true;  // Consider token expired if there's an error
         }
     }, []);
 
+    const refreshAccessToken = useCallback(async (): Promise<string> => {
+        try {
+            const response = await refreshTokenAPI();
+            return response.data.AccessToken;
+        } catch (error) {
+            console.error("Failed to refresh token:", error);
+            throw new Error("Failed to refresh access token");
+        }
+    }, []);
 
-    // Check The User Status 
-    useEffect(() => {
-        if (!authState.user || !accessToken) return;
-
-        const checkAuthStatus = async () => {
-            try {
-                const isAuthenticated = await isAuthenticatedAPI();
-                console.log(isAuthenticated);
-                if (!isAuthenticated) {
-                    // TODO: FIX THIS 
-                    toast.error('Access Token expired');
-                    logout();
-                }
-            } catch (error) {
-                console.error("Failed to check authentication:", error);
-                logout();
-            }
-        };
-
-        checkAuthStatus();
-    }, [authState.user, accessToken]);
-
-
-    // Send the latest access token within every request
-    useEffect(() => {
-        if (!accessToken) return;
-
-        const interceptRequest = axios.interceptors.request.use(
-            (config) => {
-                const token = accessToken;
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                }
-                return config;
-            },
-            (error) => Promise.reject(error)
-        );
-
-        return () => {
-            axios.interceptors.request.eject(interceptRequest);
-        };
-    }, [accessToken]);
-
-    // Refresh the access token if it's about to expire within 5 seconds
-    //TODO: make a rember me box to check 
-    useEffect(() => {
-        if (!accessToken) return;
-
-        const checkTokenExpiry = async () => {
-            if (!accessToken) return;
-
-            const isTokenAboutToExpire = () => {
-                try {
-                    const decoded = jwtDecode<DecodedToken>(accessToken);
-                    return (decoded.exp * 1000 - Date.now()) <= 5000;
-                } catch (error) {
-                    console.error('Failed to decode token:', error);
-                    return true;
-                }
+    const register = useCallback(async (values: any, platformLogoFile: File) => {
+        dispatch({ type: 'SET_LOADING' });
+        try {
+            const response = await registerAPI(values, platformLogoFile);
+            const merchant: Merchant = {
+                merchantId: response.data.MerchantId,
+                merchantName: response.data.MerchantName,
+                emailAddress: response.data.EmailAddress,
+                accessToken: response.data.AccessToken,
             };
+            if (response.data.AccessToken) {
+                sessionStorage.setItem("user", JSON.stringify(merchant));
+                sessionStorage.setItem("accessToken", response.data.AccessToken);
+                setAccessToken(response.data.AccessToken);
+                dispatch({ type: 'LOGIN_SUCCESS', payload: merchant });
+            }
+        } catch (error) {
+            console.error("Registration error:", error);
+            dispatch({ type: 'SET_ERROR', payload: "Registration failed. Please check your details." });
+            toast.error("Failed to register.");
+        }
+    }, []);
 
-            if (isTokenAboutToExpire()) {
+    const login = useCallback(throttle(async (credentials: any) => {
+        dispatch({ type: 'SET_LOADING' });
+        try {
+            const response = await loginAPI(credentials.email, credentials.password);
+            const merchant: Merchant = {
+                merchantId: response.data.MerchantId,
+                merchantName: response.data.MerchantName,
+                emailAddress: response.data.EmailAddress,
+                accessToken: response.data.AccessToken,
+            };
+            if (response.data.AccessToken) {
+                sessionStorage.setItem("user", JSON.stringify(merchant));
+                sessionStorage.setItem("accessToken", response.data.AccessToken);
+                setAccessToken(response.data.AccessToken);
+                dispatch({ type: 'LOGIN_SUCCESS', payload: merchant });
+            }
+            toast.success("Logged in successfully.");
+        } catch (error) {
+            console.error("Login error:", error);
+            dispatch({ type: 'SET_ERROR', payload: "Login failed. Please check your credentials." });
+            toast.error("Failed to log in.");
+        }
+    }, 3000), []); // Throttle login by 3 seconds
+
+    const logout = useCallback(async () => {
+        try {
+            await logOutAPI();
+            toast.success("Logged out successfully.");
+        } catch (error) {
+            console.error("Logout error:", error);
+            toast.error("Failed to log out.");
+        } finally {
+            setAccessToken(null);
+            sessionStorage.removeItem("user");
+            sessionStorage.removeItem("accessToken");
+            dispatch({ type: 'LOGOUT' });
+            setTimeout(() => window.location.reload(), 500);
+        }
+    }, []);
+
+    // Attach latest access token to axios requests
+    useEffect(() => {
+        const axiosInterceptor = axios.interceptors.request.use(async (config) => {
+            let token = sessionStorage.getItem("accessToken");
+
+            if (token && isTokenExpired(token)) {
                 try {
-                    const newToken = await refreshTokenAPI();
-                    setAccessToken(newToken);
+                    const newAccessToken = await refreshAccessToken();
+                    token = newAccessToken;
+                    sessionStorage.setItem("accessToken", newAccessToken);
+                    setAccessToken(newAccessToken);
                 } catch (error) {
-                    console.error('Failed to refresh access token:', error);
                     logout();
-                    toast.error('Failed to refresh access token');
+                    return Promise.reject(error);
                 }
             }
-        };
 
-        checkTokenExpiry();
-        const intervalId = setInterval(checkTokenExpiry, 1000);
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
 
-        return () => clearInterval(intervalId);
-    }, [accessToken]);
+            return config;
+        }, (error) => Promise.reject(error));
 
+        return () => axios.interceptors.request.eject(axiosInterceptor);
+    }, [isTokenExpired, refreshAccessToken, logout]);
 
+    // Periodic token refresh (refresh if less than 60 seconds to expiry)
+    useEffect(() => {
+        const tokenRefreshInterval = setInterval(async () => {
+            if (accessToken && !isTokenExpired(accessToken)) {
+                const decodedToken = jwtDecode(accessToken) as { exp: number };
+                const timeToExpiry = decodedToken.exp * 1000 - Date.now();
 
-    const value = {
+                if (timeToExpiry < 60 * 1000) { // Refresh if less than 60 seconds to expiry
+                    try {
+                        const newAccessToken = await refreshAccessToken();
+                        setAccessToken(newAccessToken);
+                        sessionStorage.setItem("accessToken", newAccessToken);
+                    } catch (error) {
+                        logout();
+                    }
+                }
+            }
+        }, 1 * 60 * 1000); // Check every minute
+
+        return () => clearInterval(tokenRefreshInterval);
+    }, [accessToken, isTokenExpired, refreshAccessToken, logout]);
+
+    // Manage state on mount
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem("user");
+        const storedAccessToken = sessionStorage.getItem("accessToken");
+        if (storedUser && storedAccessToken) {
+            dispatch({ type: 'LOGIN_SUCCESS', payload: JSON.parse(storedUser) });
+            setAccessToken(storedAccessToken);
+        } else {
+            dispatch({ type: 'LOGOUT' });
+        }
+    }, []);
+
+    const value = useMemo(() => ({
         user: authState.user,
         loading: authState.loading,
         error: authState.error,
         login,
+        register,
         logout,
         isAuthenticated: !!authState.user,
-    };
+    }), [authState.user, authState.loading, authState.error, login, register, logout]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

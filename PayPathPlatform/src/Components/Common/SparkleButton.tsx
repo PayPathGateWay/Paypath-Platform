@@ -1,8 +1,8 @@
-const SparkleButton = ({ onClick, isClicked = false, title }: any) => {
+const SparkleButton = ({ onClick, isClicked = false, title, width=420 }: any) => {
   return (
     <div className="relative group">
       <button
-        className={`w-[420px] relative px-6 py-3 text-black font-semibold rounded-lg overflow-hidden shadow-lg transition-all duration-300
+        className={`w-[${width}px] relative px-6 py-3 text-black font-semibold rounded-lg overflow-hidden shadow-lg transition-all duration-300
           ${isClicked ? 'bg-green-500' : 'bg-white'} 
           ${isClicked ? 'group-hover:scale-100' : 'group-hover:scale-105'} 
           ${isClicked ? 'text-white' : 'group-hover:text-white'}

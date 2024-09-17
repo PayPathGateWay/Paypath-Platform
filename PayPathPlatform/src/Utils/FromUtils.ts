@@ -12,8 +12,8 @@ export const validationSchema = yup.object().shape({
         .matches(/[0-9]/, 'Password must include at least one number')
         .matches(/[^a-zA-Z0-9]/, 'Password must include at least one special character')
         .required('Password is required'),
-    MerchantName: yup.string().required('Merchant name is required'),
-    PhoneNumber: yup.string().required('Phone number is required'),
+    merchantName: yup.string().required('Merchant name is required'),
+    phoneNumber: yup.string().required('Phone number is required'),
 });
 
 
@@ -30,19 +30,20 @@ export const formSchema = z.object({
         .string()
         .email({ message: 'Invalid email address.' })
         .min(5, { message: 'Email must be at least 5 characters.' }),
-    MerchantName: z
+    merchantName: z
         .string()
         .min(3, { message: 'MerchantName must be at least 3 characters.' })
         .max(20, { message: 'MerchantName must be at most 20 characters.' }),
+    platformLogo: z
+        .custom<File>((v) => v instanceof File, {
+            message: 'Logo is required',
+        }),
     platformName: z
         .string()
         .min(3, { message: 'Platform Name must be at least 3 characters.' })
         .max(20, { message: 'Platform Name must be at most 20 characters.' }),
-    PlatformLogo: z
-        .custom<File>((v) => v instanceof File, {
-            message: 'Logo is required',
-        }),
-    PhoneNumber: z
+    phoneNumber: z
         .string()
+        .min(10)
         .regex(/^\+?[1-9]\d{1,14}$/, { message: 'Invalid phone number format.' }),
 });

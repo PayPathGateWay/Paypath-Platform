@@ -9,28 +9,35 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input, InputProps } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-// PhoneInput Component
 type PhoneInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> &
   Omit<RPNInput.Props<typeof RPNInput.default>, 'onChange'> & {
     onChange?: (value: RPNInput.Value) => void;
   };
 
-// PhoneInput Component
 export const PhoneInput = React.forwardRef<React.ElementRef<typeof RPNInput.default>, PhoneInputProps>(
-  ({ className, onChange, ...props }, ref) => (
-    <RPNInput.default
-      ref={ref}
-      className={cn(
-        'bg-[#20242D] flex rounded-xl border-[#5B657E] shadow-md focus:shadow-lg text-white placeholder:text-[#5B657E] focus:outline-none p-[22px] w-[450px]', 
-        className
-      )}
-      flagComponent={FlagComponent}
-      countrySelectComponent={CountrySelect}
-      inputComponent={InputComponent}
-      onChange={(value) => onChange?.(value || '')}
-      {...props}
-    />
-  )
+  ({ className, onChange, ...props }, ref) => {
+    const handleChange = (value: RPNInput.Value) => {
+      if (value && value.length <= 10) {
+        onChange?.(value);
+      }
+    };
+
+    return (
+      <RPNInput.default
+        ref={ref}
+        className={cn(
+          'bg-[#20242D] flex border rounded-lg  border-[#5B657E] shadow-md focus:shadow-lg text-white placeholder:text-[#5B657E] focus:outline-none p-[3px] w-[450px]',
+          className
+        )}
+        flagComponent={FlagComponent}
+        countrySelectComponent={CountrySelect}
+        inputComponent={InputComponent}
+        defaultCountry="SA"  
+        onChange={handleChange}
+        {...props}
+      />
+    );
+  }
 );
 PhoneInput.displayName = 'PhoneInput';
 
@@ -38,21 +45,18 @@ PhoneInput.displayName = 'PhoneInput';
 const InputComponent = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, ...props }, ref) => (
     <Input
-    className={cn(
-      'bg-[#20242D] rounded-xl border border-[#5B657E] shadow-md focus:shadow-lg text-white placeholder:text-[#5B657E] focus:outline-none p-3 w-full max-w-[450px]',
-      className
-    )}
-      {...props}
+      className={cn(
+        'bg-[#20242D] border-[#20242D]  border focus:border-[#ffffff] text-white placeholder:text-[#5B657E] focus:outline-none p-3 w-full max-w-[450px] focus:ring-0'
+
+      )}
       ref={ref}
+      {...props}
     />
   )
 );
-InputComponent.displayName = 'InputComponent';
-
 
 InputComponent.displayName = 'InputComponent';
 
-// CountrySelect Component
 type CountrySelectOption = { label: string; value: RPNInput.Country };
 
 type CountrySelectProps = {
@@ -76,7 +80,7 @@ const CountrySelect = ({ disabled, value, onChange, options }: CountrySelectProp
         <Button
           type="button"
           variant="outline"
-          className={cn('flex gap-1 rounded-e-none rounded-s-lg px-3')}
+          className={cn('flex gap-1 rounded-e-none rounded-s-lg px-3 bg-[#20242D] border-none')}
           disabled={disabled}
         >
           <FlagComponent country={value} countryName={value} />
@@ -132,7 +136,7 @@ const FlagComponent = ({ country, countryName }: RPNInput.FlagProps) => {
   const Flag = flags[country];
   return (
     <span className="bg-foreground/20 flex h-4 w-6 overflow-hidden rounded-sm">
-      {Flag && <Flag title={countryName} />}
+      {Flag && <Flag title={countryName === "United States" ? "United States" : countryName} />}
     </span>
   );
 };

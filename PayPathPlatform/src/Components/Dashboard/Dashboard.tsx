@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
 import useAuth from "@/hooks/useAuth";
+import { testRoute } from "@/Services/AuthServices";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import NavBar from "../Layout/Dashboard/NavBar";
 
 export default function Dashboard() {
-
   const { user, logout } = useAuth();
+  const [data, setData] = useState<string | null>(null); // Initialize with null or a default value
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -12,13 +15,26 @@ export default function Dashboard() {
     navigate('/auth/login');
   };
 
+  const secureCall = async () => {
+    try {
+      const res = await testRoute();
+      console.log("Hello", res);
+      if (res != null) {
+
+        setData(res);
+      }
+    } catch (error) {
+      console.error("Error making secure call:", error);
+      // Optionally set error state here
+    }
+  };
+
   return (
-    <div>
-      <div className="p-10">
-        <h1>Hello Check...</h1>
-        <p>Welcome, {user?.emailAddress}!</p>
-        <Button onClick={handleLogout}>Logout</Button>
+    <>
+      <div className="bg-[#F8F8F8] h-screen w-screen flex">
+        <NavBar />
       </div>
-    </div>
-  )
+    </>
+  );
 }
+
